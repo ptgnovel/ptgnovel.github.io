@@ -470,6 +470,119 @@ function renderHomeView() {
       openDrawer(tocDrawer);
     });
   });
+
+  // Tự động kiểm tra ảnh bìa tập nếu vừa tải lên từ điện thoại
+  homeStage.querySelectorAll('.book-volume-card').forEach(card => {
+    const volNum = parseInt(card.dataset.volIndex);
+    if (volNum) resolveVolumeCover(volNum, card);
+  });
+}
+
+// Tự động kiểm tra và nâng cấp ảnh bìa chương (thử jpg, png, webp, jpeg nếu tải từ điện thoại)
+function resolveHeroImage(chapter) {
+  const heroBg = document.getElementById('hero-bg');
+  if (!heroBg) return;
+
+  const exts = ['jpg', 'png', 'webp', 'jpeg'];
+  let extIdx = 0;
+  function tryHero() {
+    if (extIdx >= exts.length) return;
+    const ext = exts[extIdx];
+    const url = `Images/Vol-${chapter.volumeIndex}/Life-${chapter.lifeNumStr}/image-01.${ext}`;
+    const img = new Image();
+    img.onload = () => {
+      chapter.heroImage = url;
+      heroBg.style.backgroundImage = `url('${url}')`;
+      updateAmbientBg(url);
+    };
+    img.onerror = () => {
+      extIdx++;
+      tryHero();
+    };
+    img.src = `${url}?t=${Date.now()}`;
+  }
+  tryHero();
+}
+
+// Tự động kiểm tra và chèn thêm ảnh minh họa nếu tác giả vừa up ảnh lên từ điện thoại (image-02, image-03, ...)
+function probeAndInjectIllustrations(chapter) {
+  const proseEl = document.querySelector('.reading-article .prose');
+  if (!proseEl) return;
+
+  const pNodes = proseEl.querySelectorAll('p');
+  if (pNodes.length === 0) return;
+
+  const exts = ['jpg', 'png', 'webp', 'jpeg'];
+  const maxImages = 5; // Quét từ image-02 đến image-06
+
+  for (let idx = 2; idx <= maxImages; idx++) {
+    // Nếu trong DOM đã có ảnh này rồi thì bỏ qua
+    if (document.querySelector(`.illustration-card[data-img*="image-0${idx}."]`)) {
+      continue;
+    }
+
+    let extIdx = 0;
+    function tryExt() {
+      if (extIdx >= exts.length) return;
+      const ext = exts[extIdx];
+      const url = `Images/Vol-${chapter.volumeIndex}/Life-${chapter.lifeNumStr}/image-0${idx}.${ext}`;
+      const img = new Image();
+      img.onload = () => {
+        if (document.querySelector(`.illustration-card[data-img*="image-0${idx}."]`)) return;
+        if (!chapter.illustrations) chapter.illustrations = [];
+        if (!chapter.illustrations.some(ill => ill.index === idx)) {
+          chapter.illustrations.push({ index: idx, url: url });
+          chapter.illustrations.sort((a, b) => a.index - b.index);
+          chapter.hasIllustration = true;
+        }
+
+        const step = Math.max(1, Math.floor(pNodes.length / (idx + 1)));
+        const targetP = pNodes[Math.min(pNodes.length - 1, (idx - 1) * step)];
+        if (targetP) {
+          const figure = document.createElement('figure');
+          figure.className = 'illustration-card';
+          figure.dataset.img = url;
+          figure.innerHTML = `
+            <div class="illustration-card-img-wrap">
+              <img src="${url}" alt="" loading="lazy">
+            </div>
+          `;
+          figure.addEventListener('click', () => {
+            openLightbox(url, `Minh họa ${chapter.number}`);
+          });
+          targetP.parentNode.insertBefore(figure, targetP.nextSibling);
+        }
+      };
+      img.onerror = () => {
+        extIdx++;
+        tryExt();
+      };
+      img.src = `${url}?t=${Date.now()}`;
+    }
+    tryExt();
+  }
+}
+
+// Tự động kiểm tra ảnh bìa tập nếu vừa tải lên từ điện thoại (cover.jpg/png/webp)
+function resolveVolumeCover(volNum, cardEl) {
+  const exts = ['cover.jpg', 'cover.png', 'cover.webp', 'cover.jpeg', 'image-01.jpg', 'image-01.png'];
+  let extIdx = 0;
+  function tryVol() {
+    if (extIdx >= exts.length) return;
+    const ext = exts[extIdx];
+    const url = `Images/Vol-${volNum}/${ext}`;
+    const img = new Image();
+    img.onload = () => {
+      const book3d = cardEl.querySelector('.book-3d');
+      if (book3d) book3d.style.backgroundImage = `url('${url}')`;
+    };
+    img.onerror = () => {
+      extIdx++;
+      tryVol();
+    };
+    img.src = `${url}?t=${Date.now()}`;
+  }
+  tryVol();
 }
 
 // Format Thoughts: Suy nghĩ nằm trong ngoặc kép “ ” (tự động in nghiêng)
@@ -693,6 +806,10 @@ function renderChapter(chapterId, scrollIntoView = true) {
 
   // Init GSAP Scrollytelling on Hero Banner
   initGsapAnimations();
+
+  // Tự động giải quyết ảnh bìa chương và ảnh minh họa (dành cho tải ảnh từ điện thoại)
+  resolveHeroImage(chapter);
+  probeAndInjectIllustrations(chapter);
 }
 
 // Setup GSAP Parallax & Scrollytelling
