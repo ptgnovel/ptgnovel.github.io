@@ -14,9 +14,12 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
   
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=2.4">
 </head>
 <body>
+  <!-- Ambient Atmospheric Background Layer (Adjustable Opacity) -->
+  <div id="ambient-bg-layer" class="ambient-bg-layer"></div>
+
   <!-- Top Reading Scroll Progress -->
   <div id="progress-bar" class="progress-bar"></div>
 
@@ -133,11 +136,14 @@
         </div>
       </div>
 
-      <!-- Font Size Slider -->
+      <!-- Font Size Slider & Direct Input -->
       <div class="pref-group">
         <div class="pref-header-row">
           <label class="pref-label">Cỡ chữ đọc</label>
-          <span class="value-badge" id="font-size-val">24px</span>
+          <div class="input-unit-wrap">
+            <input type="number" id="font-size-input" class="value-input" min="16" max="100" value="24" aria-label="Cỡ chữ">
+            <span class="unit-label">px</span>
+          </div>
         </div>
         <div class="slider-row">
           <button id="btn-font-dec" class="ctrl-step-btn" title="Giảm cỡ chữ">A-</button>
@@ -146,14 +152,35 @@
         </div>
       </div>
 
-      <!-- Reading Width -->
+      <!-- Reading Width: Input + 3 Mốc đề xuất -->
       <div class="pref-group">
-        <label class="pref-label">Độ rộng cột chữ</label>
-        <div class="pill-group">
-          <button class="pill-btn" data-width="narrow">Gọn (660px)</button>
-          <button class="pill-btn active" data-width="medium">Vừa (760px)</button>
-          <button class="pill-btn" data-width="wide">Rộng (860px)</button>
+        <div class="pref-header-row">
+          <label class="pref-label">Độ rộng cột chữ</label>
+          <div class="input-unit-wrap">
+            <input type="number" id="content-width-input" class="value-input" min="500" max="1600" step="10" value="760" aria-label="Độ rộng cột chữ">
+            <span class="unit-label">px</span>
+          </div>
         </div>
+        <div class="slider-row width-slider-row">
+          <input type="range" id="content-width-slider" min="500" max="1400" step="10" value="760">
+        </div>
+        <div class="pill-group" style="margin-top: 10px;">
+          <button class="pill-btn" data-preset-width="660">Gọn (660px)</button>
+          <button class="pill-btn active" data-preset-width="760">Vừa (760px)</button>
+          <button class="pill-btn" data-preset-width="860">Rộng (860px)</button>
+        </div>
+      </div>
+
+      <!-- Background Opacity Control -->
+      <div class="pref-group">
+        <div class="pref-header-row">
+          <label class="pref-label">Độ mờ ảnh nền (Opacity)</label>
+          <span class="value-badge" id="bg-opacity-val">0%</span>
+        </div>
+        <div class="slider-row">
+          <input type="range" id="bg-opacity-slider" min="0" max="100" value="0" step="5">
+        </div>
+        <div class="pref-hint">0% là nền màu trơn. Kéo tăng để hiện mờ tranh minh họa chìm sau trang đọc.</div>
       </div>
     </div>
   </aside>
@@ -185,6 +212,6 @@
   </div>
 
   <script src="data.js"></script>
-  <script src="script.js"></script>
+  <script src="script.js?v=2.4"></script>
 </body>
 </html>

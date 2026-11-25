@@ -21,13 +21,14 @@ const STATE = {
   theme: 'dark',
   font: 'bookerly',
   fontSize: 24,
-  width: 'medium'
+  contentWidth: 760,
+  bgOpacity: 0
 };
 
 // Storage Keys
 const STORAGE_KEY_CHAPTER = 'phuthuygia_last_chapter_v2';
 const STORAGE_KEY_SCROLL = 'phuthuygia_last_scroll_v2';
-const STORAGE_KEY_PREFS = 'phuthuygia_reader_prefs_v3';
+const STORAGE_KEY_PREFS = 'phuthuygia_reader_prefs_v4';
 
 // DOM Elements
 const docEl = document.documentElement;
@@ -61,9 +62,14 @@ const tocSearch = document.getElementById('toc-search');
 
 // Settings Controls
 const fontSizeSlider = document.getElementById('font-size-slider');
-const fontSizeVal = document.getElementById('font-size-val');
+const fontSizeInput = document.getElementById('font-size-input');
 const btnFontDec = document.getElementById('btn-font-dec');
 const btnFontInc = document.getElementById('btn-font-inc');
+const contentWidthSlider = document.getElementById('content-width-slider');
+const contentWidthInput = document.getElementById('content-width-input');
+const presetWidthBtns = document.querySelectorAll('.pill-btn[data-preset-width]');
+const bgOpacitySlider = document.getElementById('bg-opacity-slider');
+const bgOpacityVal = document.getElementById('bg-opacity-val');
 
 // Toast
 const bookmarkToast = document.getElementById('bookmark-toast');
@@ -145,6 +151,7 @@ function showHome() {
   document.title = `${NOVEL_DATA.title} - Trang Chủ Tiểu Thuyết Kỳ Ảo`;
 
   renderHomeView();
+  updateAmbientBg('Images/Vol-1/Life-00/image-01.jpg');
   window.scrollTo({ top: 0, behavior: 'instant' });
 }
 
@@ -344,6 +351,9 @@ function renderChapter(chapterId, scrollIntoView = true) {
   // Toggle view containers
   homeStage.style.display = 'none';
   chapterStage.style.display = 'block';
+  if (chapter && chapter.heroImage) {
+    updateAmbientBg(chapter.heroImage);
+  }
 
   // Update header text
   if (navSep) navSep.style.display = 'inline';
@@ -687,17 +697,43 @@ function setupEventListeners() {
     });
   });
 
-  // Width Switches
-  document.querySelectorAll('.pill-btn[data-width]').forEach(btn => {
+  // Font Size Controls
+  if (fontSizeSlider) {
+    fontSizeSlider.min = '16';
+    fontSizeSlider.max = '100';
+    fontSizeSlider.addEventListener('input', (e) => setFontSize(parseInt(e.target.value)));
+  }
+  if (fontSizeInput) {
+    fontSizeInput.addEventListener('change', (e) => setFontSize(parseInt(e.target.value)));
+    fontSizeInput.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value);
+      if (!isNaN(val) && val >= 16 && val <= 100) setFontSize(val);
+    });
+  }
+  if (btnFontDec) btnFontDec.addEventListener('click', () => setFontSize(STATE.fontSize - 1));
+  if (btnFontInc) btnFontInc.addEventListener('click', () => setFontSize(STATE.fontSize + 1));
+
+  // Content Width Controls (Slider, Input & 3 Presets)
+  if (contentWidthSlider) {
+    contentWidthSlider.addEventListener('input', (e) => setContentWidth(parseInt(e.target.value)));
+  }
+  if (contentWidthInput) {
+    contentWidthInput.addEventListener('change', (e) => setContentWidth(parseInt(e.target.value)));
+    contentWidthInput.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value);
+      if (!isNaN(val) && val >= 480 && val <= 1600) setContentWidth(val);
+    });
+  }
+  presetWidthBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-      setWidth(btn.dataset.width);
+      setContentWidth(parseInt(btn.dataset.presetWidth));
     });
   });
 
-  // Font Size
-  fontSizeSlider.addEventListener('input', (e) => setFontSize(parseInt(e.target.value)));
-  btnFontDec.addEventListener('click', () => setFontSize(STATE.fontSize - 1));
-  btnFontInc.addEventListener('click', () => setFontSize(STATE.fontSize + 1));
+  // Background Opacity Control
+  if (bgOpacitySlider) {
+    bgOpacitySlider.addEventListener('input', (e) => setBgOpacity(parseInt(e.target.value)));
+  }
 
   // Progress Bar & Scroll Memory
   window.addEventListener('scroll', () => {
@@ -805,22 +841,58 @@ function setFont(font) {
 }
 
 function setFontSize(size) {
-  const bounded = Math.max(16, Math.min(100, size));
+  const bounded = Math.max(16, Math.min(100, parseInt(size) || 24));
   STATE.fontSize = bounded;
   docEl.style.setProperty('--font-size-base', `${bounded}px`);
   docEl.setAttribute('data-size', bounded);
-  fontSizeSlider.value = bounded;
-  fontSizeVal.textContent = `${bounded}px`;
+  if (fontSizeSlider) {
+    fontSizeSlider.min = '16';
+    fontSizeSlider.max = '100';
+    fontSizeSlider.value = bounded;
+  }
+  if (fontSizeInput) fontSizeInput.value = bounded;
   savePreferences();
 }
 
-function setWidth(width) {
-  STATE.width = width;
-  docEl.setAttribute('data-width', width);
-  document.querySelectorAll('.pill-btn[data-width]').forEach(b => {
-    b.classList.toggle('active', b.dataset.width === width);
+function setContentWidth(widthPx) {
+  let val = parseInt(widthPx);
+  if (isNaN(val)) val = 760;
+  val = Math.max(480, Math.min(1600, val));
+  
+  STATE.contentWidth = val;
+  docEl.style.setProperty('--max-content-width', `${val}px`);
+  
+  if (contentWidthSlider) contentWidthSlider.value = val;
+  if (contentWidthInput) contentWidthInput.value = val;
+  
+  presetWidthBtns.forEach(btn => {
+    const pVal = parseInt(btn.dataset.presetWidth);
+    btn.classList.toggle('active', pVal === val);
   });
+  
   savePreferences();
+}
+
+function setBgOpacity(val) {
+  let pct = parseInt(val);
+  if (isNaN(pct)) pct = 0;
+  pct = Math.max(0, Math.min(100, pct));
+  
+  STATE.bgOpacity = pct;
+  const dec = (pct / 100).toFixed(2);
+  docEl.style.setProperty('--bg-ambient-opacity', dec);
+  
+  if (bgOpacitySlider) bgOpacitySlider.value = pct;
+  if (bgOpacityVal) bgOpacityVal.textContent = `${pct}%`;
+  
+  savePreferences();
+}
+
+function updateAmbientBg(imgUrl) {
+  const ambient = document.getElementById('ambient-bg-layer');
+  if (ambient && imgUrl) {
+    ambient.style.backgroundImage = `url('${imgUrl}')`;
+  }
 }
 
 function savePreferences() {
@@ -831,13 +903,14 @@ function loadPreferences() {
   try {
     let saved = JSON.parse(localStorage.getItem(STORAGE_KEY_PREFS));
     if (!saved) {
-      const v2 = JSON.parse(localStorage.getItem('phuthuygia_reader_prefs_v2'));
-      if (v2) {
+      const old = JSON.parse(localStorage.getItem('phuthuygia_reader_prefs_v3') || localStorage.getItem('phuthuygia_reader_prefs_v2'));
+      if (old) {
         saved = {
-          theme: v2.theme || 'dark',
-          font: 'bookerly',
-          fontSize: 24,
-          width: v2.width || 'medium'
+          theme: old.theme || 'dark',
+          font: old.font || 'bookerly',
+          fontSize: old.fontSize || 24,
+          contentWidth: old.width === 'narrow' ? 660 : (old.width === 'wide' ? 860 : 760),
+          bgOpacity: 0
         };
       }
     }
@@ -845,10 +918,13 @@ function loadPreferences() {
       if (saved.theme) setTheme(saved.theme);
       setFont(saved.font || 'bookerly');
       setFontSize(saved.fontSize || 24);
-      if (saved.width) setWidth(saved.width);
+      setContentWidth(saved.contentWidth || 760);
+      setBgOpacity(typeof saved.bgOpacity !== 'undefined' ? saved.bgOpacity : 0);
     } else {
       setFont('bookerly');
       setFontSize(24);
+      setContentWidth(760);
+      setBgOpacity(0);
     }
   } catch (e) {
     console.error(e);
