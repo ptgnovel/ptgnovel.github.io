@@ -1,0 +1,10 @@
+{
+  "name": "phu-thuy-gia",
+  "version": "1.0.0",
+  "scripts": {
+    "parse": "node parse-novel.js"
+  },
+  "dependencies": {
+    "gsap": "^3.15.1"
+  }
+}

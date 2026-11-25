@@ -1,0 +1,19 @@
+# ==============================================================
+# DANH SÁCH TỪ KHÓA ĐƯỢC IN NGHIÊNG VÀ CÓ MÀU CAM SẬM
+# ==============================================================
+# - Mỗi từ hoặc cụm từ được viết trên 1 dòng.
+# - Dòng có dấu # ở đầu là dòng chú thích (bỏ qua).
+# - Bạn có thể thêm, bớt hoặc chỉnh sửa từ khóa tùy ý bất cứ lúc nào.
+# - Sau khi sửa, chạy lệnh: npm run parse để cập nhật vào web.
+# ==============================================================
+
+Aethelgard
+Vespera
+Iris
+St. Broken-Wand
+Lumos Lignum
+Nicolas Flamel
+Flamel
+Kensington
+Portobello
+Devon

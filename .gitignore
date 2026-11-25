@@ -1,0 +1,7 @@
+node_modules/
+.impeccable/
+taste-skill-main/
+skills-main/
+*.log
+.DS_Store
+Thumbs.db
