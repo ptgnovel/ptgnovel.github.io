@@ -1,0 +1,45 @@
+name: Auto Sync Novel Data
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'contents/combine/Phu Thuy Gia.txt'
+      - 'contents/text-highlight.json'
+      - 'contents/text-highlight.txt'
+      - 'parse-novel.js'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  parse-and-commit:
+    if: "!contains(github.event.head_commit.author.name, 'github-actions')"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Parse Novel Content
+        run: node parse-novel.js
+
+      - name: Commit and Push data.js
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          if [ -n "$(git status --porcelain data.js)" ]; then
+            git add data.js
+            git commit -m "chore(bot): tu dong parse data.js tu Phu Thuy Gia.txt [skip ci]"
+            git push origin main || echo "Khong the push bang bot do quyen org, trang web se tu dong parse qua client-side sync."
+          else
+            echo "data.js khong co thay doi."
+          fi

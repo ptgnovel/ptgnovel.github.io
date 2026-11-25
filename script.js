@@ -83,6 +83,144 @@ const lightboxImage = document.getElementById('lightbox-image');
 const lightboxCaption = document.getElementById('lightbox-caption');
 const lightboxCloseBtn = document.getElementById('lightbox-close-btn');
 
+// Client-side text parser: Cho phép trang web tự đọc thẳng Phu Thuy Gia.txt khi người dùng up từ điện thoại
+function parseNovelText(rawText) {
+  const lines = rawText.split(/\r?\n/);
+  let currentVol = null;
+  let currentCh = null;
+  const volumes = [];
+  let globalId = 1;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    const volMatch = line.match(/^TẬP\s+(\d+)\s*[:–—\-]\s*(.+)$/i);
+    if (volMatch) {
+      const volNum = parseInt(volMatch[1], 10);
+      currentVol = {
+        volumeIndex: volNum,
+        volumeTitle: `Tập ${volNum}: ${volMatch[2].trim()}`,
+        chapters: []
+      };
+      volumes.push(currentVol);
+      continue;
+    }
+
+    const lifeMatch = line.match(/^Life\s+(\d+)\s*[-–—]\s*(.+)$/i);
+    if (lifeMatch) {
+      if (!currentVol) {
+        currentVol = {
+          volumeIndex: 1,
+          volumeTitle: 'Tập 1: Khế Ước Iris',
+          chapters: []
+        };
+        volumes.push(currentVol);
+      }
+
+      const lifeNumStr = lifeMatch[1].padStart(2, '0');
+      const chTitle = lifeMatch[2].trim().replace(/\.$/, '');
+      currentCh = {
+        id: globalId++,
+        volumeIndex: currentVol.volumeIndex,
+        lifeNumStr: lifeNumStr,
+        number: `Chương ${lifeNumStr}`,
+        title: chTitle,
+        quote: '',
+        heroImage: `Images/Vol-${currentVol.volumeIndex}/Life-${lifeNumStr}/image-01.jpg`,
+        paragraphs: [],
+        illustrations: []
+      };
+      currentVol.chapters.push(currentCh);
+      continue;
+    }
+
+    if (/^[=\-—_]{3,}$/.test(line) || line === '---') continue;
+    let cleanLine = line;
+    if (/={3,}/.test(cleanLine)) {
+      cleanLine = cleanLine.replace(/={3,}/g, '').trim();
+      if (!cleanLine) continue;
+    }
+
+    if (currentCh && cleanLine.length > 0) {
+      if (currentCh.paragraphs.length === 0) {
+        const sentenceMatch = cleanLine.match(/^([^.!?]+[.!?])/);
+        currentCh.quote = sentenceMatch ? `«${sentenceMatch[1].trim()}»` : `«${cleanLine.substring(0, 120)}...»`;
+      }
+      currentCh.paragraphs.push(cleanLine);
+    }
+  }
+
+  // Giữ lại cấu trúc illustrations nếu đã có trong NOVEL_DATA
+  if (typeof NOVEL_DATA !== 'undefined' && NOVEL_DATA && NOVEL_DATA.volumes) {
+    const existingIllustrations = {};
+    NOVEL_DATA.volumes.forEach(v => {
+      v.chapters.forEach(c => {
+        if (c.illustrations && c.illustrations.length > 0) {
+          existingIllustrations[`${v.volumeIndex}-${c.lifeNumStr}`] = c.illustrations;
+        }
+      });
+    });
+    volumes.forEach(v => {
+      v.chapters.forEach(c => {
+        const key = `${v.volumeIndex}-${c.lifeNumStr}`;
+        if (existingIllustrations[key]) {
+          c.illustrations = existingIllustrations[key];
+          c.hasIllustration = true;
+        }
+      });
+    });
+  }
+
+  return {
+    title: 'Phù Thủy Giả',
+    author: 'Andy Hoàng Hiếu',
+    highlights: (typeof NOVEL_DATA !== 'undefined' && NOVEL_DATA && NOVEL_DATA.highlights) ? NOVEL_DATA.highlights : [],
+    volumes: volumes
+  };
+}
+
+// Tự động kiểm tra file Phu Thuy Gia.txt mới nhất chạy ngầm (bỏ qua cache)
+async function syncLatestContent() {
+  try {
+    const res = await fetch(`contents/combine/Phu Thuy Gia.txt?t=${Date.now()}`);
+    if (!res.ok) return;
+    const text = await res.text();
+    if (!text || text.length < 1000) return;
+
+    const parsedData = parseNovelText(text);
+    if (!parsedData || !parsedData.volumes || parsedData.volumes.length === 0) return;
+
+    // So sánh xem nội dung có mới hơn không
+    const newChapters = [];
+    parsedData.volumes.forEach(v => v.chapters.forEach(c => newChapters.push(c)));
+    const oldChapters = (typeof NOVEL_DATA !== 'undefined' && NOVEL_DATA && NOVEL_DATA.volumes) ? getAllChapters() : [];
+
+    const isDifferent = (newChapters.length !== oldChapters.length) ||
+      (newChapters.length > 0 && oldChapters.length > 0 && (
+        newChapters[newChapters.length - 1].paragraphs.length !== oldChapters[oldChapters.length - 1].paragraphs.length ||
+        newChapters[newChapters.length - 1].title !== oldChapters[oldChapters.length - 1].title
+      ));
+
+    if (isDifferent || typeof NOVEL_DATA === 'undefined') {
+      if (typeof NOVEL_DATA !== 'undefined' && NOVEL_DATA) {
+        Object.assign(NOVEL_DATA, parsedData);
+      } else {
+        window.NOVEL_DATA = parsedData;
+      }
+      console.log(`✓ [Auto-Sync] Đã cập nhật ${newChapters.length} chương mới nhất từ Phu Thuy Gia.txt`);
+
+      buildTableOfContents();
+      if (STATE.currentView === 'home') {
+        showHome();
+      } else if (STATE.currentChapterId) {
+        const currentCh = getChapterById(STATE.currentChapterId);
+        if (currentCh) renderChapter(STATE.currentChapterId, false);
+      }
+    }
+  } catch (err) {
+    console.warn('[Auto-Sync] Không thể fetch trực tiếp file text, sử dụng data.js:', err);
+  }
+}
+
 // Flatten chapters for easy lookup
 function getAllChapters() {
   const list = [];
@@ -127,6 +265,9 @@ function initApp() {
     bookmarkToast.classList.add('show');
     setTimeout(() => bookmarkToast.classList.remove('show'), 8000);
   }
+
+  // Tự động kiểm tra đồng bộ nội dung mới từ Phu Thuy Gia.txt (bỏ qua cache)
+  syncLatestContent();
 }
 
 // Show Home Landing Page
