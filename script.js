@@ -20,14 +20,14 @@ const STATE = {
   currentChapterId: 1,
   theme: 'dark',
   font: 'bookerly',
-  fontSize: 19,
+  fontSize: 24,
   width: 'medium'
 };
 
 // Storage Keys
 const STORAGE_KEY_CHAPTER = 'phuthuygia_last_chapter_v2';
 const STORAGE_KEY_SCROLL = 'phuthuygia_last_scroll_v2';
-const STORAGE_KEY_PREFS = 'phuthuygia_reader_prefs_v2';
+const STORAGE_KEY_PREFS = 'phuthuygia_reader_prefs_v3';
 
 // DOM Elements
 const docEl = document.documentElement;
@@ -805,9 +805,10 @@ function setFont(font) {
 }
 
 function setFontSize(size) {
-  const bounded = Math.max(16, Math.min(25, size));
+  const bounded = Math.max(16, Math.min(100, size));
   STATE.fontSize = bounded;
   docEl.style.setProperty('--font-size-base', `${bounded}px`);
+  docEl.setAttribute('data-size', bounded);
   fontSizeSlider.value = bounded;
   fontSizeVal.textContent = `${bounded}px`;
   savePreferences();
@@ -828,12 +829,26 @@ function savePreferences() {
 
 function loadPreferences() {
   try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY_PREFS));
+    let saved = JSON.parse(localStorage.getItem(STORAGE_KEY_PREFS));
+    if (!saved) {
+      const v2 = JSON.parse(localStorage.getItem('phuthuygia_reader_prefs_v2'));
+      if (v2) {
+        saved = {
+          theme: v2.theme || 'dark',
+          font: 'bookerly',
+          fontSize: 24,
+          width: v2.width || 'medium'
+        };
+      }
+    }
     if (saved) {
       if (saved.theme) setTheme(saved.theme);
-      if (saved.font) setFont(saved.font);
-      if (saved.fontSize) setFontSize(saved.fontSize);
+      setFont(saved.font || 'bookerly');
+      setFontSize(saved.fontSize || 24);
       if (saved.width) setWidth(saved.width);
+    } else {
+      setFont('bookerly');
+      setFontSize(24);
     }
   } catch (e) {
     console.error(e);

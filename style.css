@@ -79,7 +79,7 @@
   --font-ui: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
 
   --max-content-width: 760px;
-  --font-size-base: 19px;
+  --font-size-base: 24px;
   --line-height-base: 1.84;
   --ease-cinematic: cubic-bezier(0.16, 1, 0.3, 1);
 
@@ -537,7 +537,7 @@ body {
 .drop-cap {
   float: left;
   font-family: var(--font-display);
-  font-size: 4em;
+  font-size: clamp(80px, 3.8em, 160px);
   line-height: 0.82;
   padding-top: 6px;
   padding-right: 14px;
