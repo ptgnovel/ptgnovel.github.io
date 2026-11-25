@@ -21,6 +21,7 @@ const NOVEL_DATA = {
   "volumes": [
     {
       "volumeTitle": "Tập 1: KHẾ ƯỚC IRIS",
+      "coverImage": "",
       "chapters": [
         {
           "id": 1,
@@ -2142,6 +2143,7 @@ const NOVEL_DATA = {
     },
     {
       "volumeTitle": "Tập 2: NGHỊCH TỬ VESPERA",
+      "coverImage": "",
       "chapters": [
         {
           "id": 23,
@@ -4519,6 +4521,7 @@ const NOVEL_DATA = {
     },
     {
       "volumeTitle": "Tập 3: MANH MỐI FLAMEL",
+      "coverImage": "",
       "chapters": [
         {
           "id": 47,
@@ -7480,6 +7483,7 @@ const NOVEL_DATA = {
     },
     {
       "volumeTitle": "Tập 4: HÀN ĐỘC NƠI NHÀ KÍNH",
+      "coverImage": "",
       "chapters": [
         {
           "id": 70,

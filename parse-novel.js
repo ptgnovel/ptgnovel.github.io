@@ -179,6 +179,20 @@ async function main() {
   // Quản lý thư mục ảnh và phân loại ảnh từ trên xuống dưới
   console.log('Đang thiết lập thư mục Images theo cấu trúc Vol-X/Life-YY...');
   volumes.forEach(vol => {
+    // Quét ảnh bìa riêng của tập nếu có: Images/Vol-X/cover.(jpg|png|webp)
+    const volDir = path.join(imagesBaseDir, `Vol-${vol.volumeIndex}`);
+    const coverExts = ['cover.jpg', 'cover.png', 'cover.webp', 'cover.jpeg', 'cover.avif'];
+    let volCover = null;
+    if (fs.existsSync(volDir)) {
+      for (const cf of coverExts) {
+        if (fs.existsSync(path.join(volDir, cf))) {
+          volCover = `Images/Vol-${vol.volumeIndex}/${cf}`;
+          break;
+        }
+      }
+    }
+    vol.coverImage = volCover || (vol.chapters[0] ? vol.chapters[0].heroImage : `Images/Vol-${vol.volumeIndex}/Life-00/image-01.jpg`);
+
     vol.chapters.forEach(ch => {
       // 1. Trích dẫn câu đầu tiên
       if (ch.paragraphs.length > 0) {
@@ -245,6 +259,7 @@ async function main() {
     highlights: highlights,
     volumes: volumes.map(v => ({
       volumeTitle: v.volumeTitle,
+      coverImage: v.coverImage,
       chapters: v.chapters
     }))
   };

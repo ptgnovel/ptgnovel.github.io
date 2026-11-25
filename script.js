@@ -189,12 +189,32 @@ async function syncLatestContent() {
     const parsedData = parseNovelText(text);
     if (!parsedData || !parsedData.volumes || parsedData.volumes.length === 0) return;
 
-    // So sánh xem nội dung có mới hơn không
+    // Tự động tải Text Highlights mới nhất nếu có thay đổi từ file json/txt
+    try {
+      const hRes = await fetch(`contents/text-highlight.json?t=${Date.now()}`);
+      if (hRes.ok) {
+        const hJson = await hRes.json();
+        if (Array.isArray(hJson)) {
+          parsedData.highlights = hJson.map(w => w.trim()).filter(Boolean);
+        }
+      } else {
+        const tRes = await fetch(`contents/text-highlight.txt?t=${Date.now()}`);
+        if (tRes.ok) {
+          const tText = await tRes.text();
+          parsedData.highlights = tText.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0 && !l.startsWith('#'));
+        }
+      }
+    } catch (_) {}
+
+    // So sánh xem nội dung hoặc highlights có mới hơn không
     const newChapters = [];
     parsedData.volumes.forEach(v => v.chapters.forEach(c => newChapters.push(c)));
     const oldChapters = (typeof NOVEL_DATA !== 'undefined' && NOVEL_DATA && NOVEL_DATA.volumes) ? getAllChapters() : [];
 
-    const isDifferent = (newChapters.length !== oldChapters.length) ||
+    const oldHighlights = (typeof NOVEL_DATA !== 'undefined' && NOVEL_DATA && NOVEL_DATA.highlights) ? NOVEL_DATA.highlights : [];
+    const highlightsChanged = JSON.stringify(parsedData.highlights || []) !== JSON.stringify(oldHighlights);
+
+    const isDifferent = highlightsChanged || (newChapters.length !== oldChapters.length) ||
       (newChapters.length > 0 && oldChapters.length > 0 && (
         newChapters[newChapters.length - 1].paragraphs.length !== oldChapters[oldChapters.length - 1].paragraphs.length ||
         newChapters[newChapters.length - 1].title !== oldChapters[oldChapters.length - 1].title
@@ -337,7 +357,7 @@ function renderHomeView() {
     const chCount = vol.chapters.length;
     const firstCh = vol.chapters[0];
     const firstChId = firstCh ? firstCh.id : 1;
-    const coverImg = (firstCh && firstCh.heroImage) ? firstCh.heroImage : `Images/Vol-${volNum}/Life-00/image-01.jpg`;
+    const coverImg = vol.coverImage || ((firstCh && firstCh.heroImage) ? firstCh.heroImage : `Images/Vol-${volNum}/Life-00/image-01.jpg`);
     const synopsis = VOLUME_SYNOPSES[volNum] || 'Khám phá thế giới ma thuật ngầm cổ xưa cùng tiểu thư Shani và cận vệ Trần Nam.';
     const cleanTitle = vol.volumeTitle.replace(/^Tập\s+\d+:\s*/i, '');
 
