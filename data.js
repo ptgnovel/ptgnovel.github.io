@@ -103,7 +103,7 @@ const NOVEL_DATA = {
           "heroImage": "Images/Vol-1/Life-01/image-01.jpg",
           "paragraphs": [
             "Người bình thường leo lên đỉnh Fansipan vào lúc nửa đêm chỉ có hai khả năng, một là kẻ liều mạng tìm kiếm cảm giác mạnh, hai là kẻ điên muốn gieo mình xuống đáy vực.",
-            "Thế nhưng, đôi mắt trần tục của con người vốn chưa bao giờ chạm tới được những bí mật ẩn sâu dưới màn đêm.",
+            "Thế nhưng, đôi mắt trần tục của con người vốn chưa bao giờ chạm tới được những bí mật ẩn sâu dưới màn đêm tăm tối.",
             "Vào khoảnh khắc kim đồng hồ điểm mười hai giờ đêm, toàn bộ các vệ tinh khí tượng quét qua tọa độ Fansipan đều đồng loạt phát tín hiệu nhiễu loạn cực hạn. Giữa rặng Hoàng Liên Sơn chìm trong sương muối, các cảm biến quân sự ghi nhận một điểm kỳ dị, khi tầng tầng bão điện khổng lồ trong khí quyển đang cuộn xoáy dồn về một mỏm đá trơ trọi.",
             "Nơi ấy, giữa gió buốt gầm thét, có một bóng người đang ngồi xếp bằng. Quầng sáng hoàng kim quanh thân hắn bốc lên ngùn ngụt, chiếu rọi dáng vẻ tĩnh tại tựa như một pho tượng cổ ngàn năm. Không mảy may run rẩy trước thiên uy, khí tức thoát tục như một bậc ẩn tu sắp rũ sạch bụi trần để phi thăng tiên giới.",
             "Quả thực là tiên phong đạo cốt nha!",
